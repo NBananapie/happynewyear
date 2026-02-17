@@ -1,148 +1,240 @@
-const canvas = document.getElementById('fireworks');
-const ctx = canvas.getContext('2d');
+import * as THREE from 'three';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-let width, height;
-const fireworks = [];
-const particles = [];
+// --- Configuration ---
+const FIREWORK_LIFETIME = 3.0;
+const PARTICLE_COUNT = 400;
+const GRAVITY = new THREE.Vector3(0, -0.05, 0);
 
-function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-}
+// --- 3D Scene Setup ---
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
 
-window.addEventListener('resize', resize);
-resize();
+camera.position.z = 50;
 
+// --- Post Processing (Bloom for Glow) ---
+const renderScene = new RenderPass(scene, camera);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+bloomPass.threshold = 0;
+bloomPass.strength = 1.2;
+bloomPass.radius = 0.5;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+// --- Particle System Class ---
 class Firework {
-    constructor(x, y, targetX, targetY, color) {
-        this.x = x;
-        this.y = y;
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.color = color;
-        this.distanceToTarget = Math.sqrt(Math.pow(targetX - x, 2) + Math.pow(targetY - y, 2));
-        this.distanceTraveled = 0;
-        this.coordinates = [];
-        this.coordinateCount = 3;
-        while (this.coordinateCount--) {
-            this.coordinates.push([this.x, this.y]);
+    constructor(position, color) {
+        this.active = true;
+        this.time = 0;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(PARTICLE_COUNT * 3);
+        const velocities = new Float32Array(PARTICLE_COUNT * 3);
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            positions[i * 3] = position.x;
+            positions[i * 3 + 1] = position.y;
+            positions[i * 3 + 2] = position.z;
+
+            // Spherical explosion
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const speed = Math.random() * 2 + 1;
+
+            velocities[i * 3] = speed * Math.sin(phi) * Math.cos(theta);
+            velocities[i * 3 + 1] = speed * Math.sin(phi) * Math.sin(theta);
+            velocities[i * 3 + 2] = speed * Math.cos(phi);
         }
-        this.angle = Math.atan2(targetY - y, targetX - x);
-        this.speed = 2;
-        this.acceleration = 1.05;
-        this.brightness = Math.random() * 50 + 50;
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        this.velocityData = velocities;
+
+        const material = new THREE.PointsMaterial({
+            color: color,
+            size: 0.6,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            depthWrite: false
+        });
+
+        this.points = new THREE.Points(geometry, material);
+        scene.add(this.points);
     }
 
-    update(index) {
-        this.coordinates.pop();
-        this.coordinates.unshift([this.x, this.y]);
-        this.speed *= this.acceleration;
-        const vx = Math.cos(this.angle) * this.speed;
-        const vy = Math.sin(this.angle) * this.speed;
-        this.distanceTraveled = Math.sqrt(Math.pow(vx, 2) + Math.pow(vy, 2));
+    update(delta) {
+        if (!this.active) return;
+        this.time += delta;
+        const positions = this.points.geometry.attributes.position.array;
 
-        if (this.distanceTraveled >= this.distanceToTarget) {
-            createParticles(this.targetX, this.targetY, this.color);
-            fireworks.splice(index, 1);
-        } else {
-            this.x += vx;
-            this.y += vy;
-            this.distanceToTarget -= this.distanceTraveled;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            positions[i * 3] += this.velocityData[i * 3] * delta * 15;
+            positions[i * 3 + 1] += this.velocityData[i * 3 + 1] * delta * 15;
+            positions[i * 3 + 1] += GRAVITY.y * delta * 20; // Simplified gravity
+            positions[i * 3 + 2] += this.velocityData[i * 3 + 2] * delta * 15;
+
+            // Drag
+            this.velocityData[i * 3] *= 0.98;
+            this.velocityData[i * 3 + 1] *= 0.98;
+            this.velocityData[i * 3 + 2] *= 0.98;
         }
-    }
 
-    draw() {
-        ctx.beginPath();
-        ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
-        ctx.lineTo(this.x, this.y);
-        ctx.strokeStyle = `hsl(45, 100%, ${this.brightness}%)`; // Trail is golden
-        ctx.stroke();
+        this.points.geometry.attributes.position.needsUpdate = true;
+        this.points.material.opacity = Math.max(0, 1 - (this.time / FIREWORK_LIFETIME));
+
+        if (this.time > FIREWORK_LIFETIME) {
+            this.active = false;
+            scene.remove(this.points);
+            this.points.geometry.dispose();
+            this.points.material.dispose();
+        }
     }
 }
 
-class Particle {
-    constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
-        this.coordinates = [];
-        this.coordinateCount = 5;
-        while (this.coordinateCount--) {
-            this.coordinates.push([this.x, this.y]);
+const activeFireworks = [];
+
+function launchFirework(x, y, z, color = 0xffd700) {
+    activeFireworks.push(new Firework(new THREE.Vector3(x, y, z), color));
+}
+
+// --- Gesture Recognition with MediaPipe ---
+const videoElement = document.getElementById('webcam');
+const canvasElement = document.getElementById('gesture-points');
+const canvasCtx = canvasElement.getContext('2d');
+const statusElement = document.getElementById('gesture-status');
+
+let lastPinchState = false;
+let pinchCooldown = 0;
+
+function onResults(results) {
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        statusElement.innerText = "👐 手部追踪中...";
+        for (const landmarks of results.multiHandLandmarks) {
+            // Draw visual cues
+            drawLandmarks(landmarks);
+
+            // Logic: Pinch Detection (Index Finger Tip [8] vs Thumb Tip [4])
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const distance = Math.sqrt(
+                Math.pow(thumbTip.x - indexTip.x, 2) +
+                Math.pow(thumbTip.y - indexTip.y, 2)
+            );
+
+            // Map camera coordinates to 3D world (normalized -1 to 1)
+            const worldX = (0.5 - indexTip.x) * 100; // Mirrored
+            const worldY = (0.5 - indexTip.y) * 60;
+            const worldZ = 0;
+
+            // Effect 1: Pinch (Sparkles)
+            if (distance < 0.05) {
+                launchFirework(worldX, worldY, worldZ, 0xff3300); // Red spark
+                statusElement.innerText = "🤏 蓄势待发...";
+                lastPinchState = true;
+            } else if (lastPinchState) {
+                // Release Pinch -> Big Gold Burst
+                launchFirework(worldX, worldY, worldZ, 0xffd700);
+                lastPinchState = false;
+                statusElement.innerText = "🎆 绽放！";
+            }
+
+            // Effect 2: Palm Open (Check if fingers are apart)
+            const middleTip = landmarks[12];
+            const palmDistance = Math.sqrt(
+                Math.pow(indexTip.x - middleTip.x, 2) +
+                Math.pow(indexTip.y - middleTip.y, 2)
+            );
+
+            if (palmDistance > 0.1 && Math.random() < 0.1) {
+                launchFirework((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 50, (Math.random() - 1) * 20, 0xffffff);
+            }
         }
-        this.angle = Math.random() * Math.PI * 2;
-        this.speed = Math.random() * 10 + 1;
-        this.friction = 0.95;
-        this.gravity = 1;
-        this.hue = color; // Expecting hue value
-        this.brightness = Math.random() * 50 + 50;
-        this.alpha = 1;
-        this.decay = Math.random() * 0.03 + 0.01;
+    } else {
+        statusElement.innerText = "🤚 请在镜头前举起手";
     }
+    canvasCtx.restore();
+}
 
-    update(index) {
-        this.coordinates.pop();
-        this.coordinates.unshift([this.x, this.y]);
-        this.speed *= this.friction;
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed + this.gravity;
-        this.alpha -= this.decay;
-
-        if (this.alpha <= this.decay) {
-            particles.splice(index, 1);
-        }
-    }
-
-    draw() {
-        ctx.beginPath();
-        ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
-        ctx.lineTo(this.x, this.y);
-        ctx.strokeStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
-        ctx.stroke();
+function drawLandmarks(landmarks) {
+    canvasCtx.fillStyle = '#f9d423';
+    for (const landmark of landmarks) {
+        canvasCtx.beginPath();
+        canvasCtx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 2, 0, 2 * Math.PI);
+        canvasCtx.fill();
     }
 }
 
-function createParticles(x, y, hue) {
-    let particleCount = 30;
-    while (particleCount--) {
-        particles.push(new Particle(x, y, hue));
-    }
-}
+const hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+});
+hands.onResults(onResults);
 
-function loop() {
-    requestAnimationFrame(loop);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, width, height);
-    ctx.globalCompositeOperation = 'lighter';
+const cameraUtils = new Camera(videoElement, {
+    onFrame: async () => {
+        await hands.send({ image: videoElement });
+    },
+    width: 640,
+    height: 480
+});
+cameraUtils.start();
 
-    let i = fireworks.length;
+// --- Animation Loop ---
+let lastTime = 0;
+function animate(time) {
+    const delta = (time - lastTime) / 1000;
+    lastTime = time;
+
+    requestAnimationFrame(animate);
+
+    let i = activeFireworks.length;
     while (i--) {
-        fireworks[i].draw();
-        fireworks[i].update(i);
+        activeFireworks[i].update(delta);
+        if (!activeFireworks[i].active) {
+            activeFireworks.splice(i, 1);
+        }
     }
 
-    let j = particles.length;
-    while (j--) {
-        particles[j].draw();
-        particles[j].update(j);
+    // Random Background Stars
+    if (Math.random() < 0.02) {
+        launchFirework((Math.random() - 0.5) * 120, (Math.random() - 0.5) * 80, -50, 0x444444);
     }
 
-    // Auto launch
-    if (Math.random() < 0.05) {
-        const startX = Math.random() * width;
-        const startY = height;
-        const targetX = Math.random() * width;
-        const targetY = Math.random() * (height / 2);
-        const hue = Math.random() < 0.5 ? 0 : 45; // Red or Gold
-        fireworks.push(new Firework(startX, startY, targetX, targetY, hue));
-    }
+    composer.render();
 }
 
-window.addEventListener('mousedown', (e) => {
-    const hue = Math.random() * 360; // Random colors on click
-    fireworks.push(new Firework(width / 2, height, e.clientX, e.clientY, hue));
+// Window Resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
 });
 
-loop();
+// Click fallback
+window.addEventListener('mousedown', (e) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 100;
+    const y = -(e.clientY / window.innerHeight - 0.5) * 60;
+    launchFirework(x, y, 0, Math.random() * 0xffffff);
+});
+
+animate(0);
+console.log("3D Fireworks Engine Started with Hand Tracking");

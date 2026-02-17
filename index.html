@@ -1,38 +1,62 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 新年快乐！</title>
+    <title>2026 3D 手势烟花新年快乐！</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts: Ma Shan Zheng for calligraphic feel -->
-    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Three.js & Libraries -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
+
 <body>
-    <canvas id="fireworks"></canvas>
-    
-    <div class="container">
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Gesture Recognition Overlay -->
+    <div id="gesture-overlay">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="gesture-points"></canvas>
+        <div id="gesture-status">初始化摄像头...</div>
+    </div>
+
+    <div class="container main-ui">
         <header class="glass-card">
-            <h1 class="title">2026 新年快乐</h1>
-            <p class="subtitle">金蛇起舞辞旧岁，万象更新迎新春</p>
+            <h1 class="title">2026 灵蛇送福</h1>
+            <p class="subtitle">手势舞动 · 辉光新年</p>
         </header>
 
         <main class="content">
             <div class="card glass-card">
                 <p class="greeting-text">
-                    在这个充满希望的新年里，<br>
-                    愿所有的美好如约而至，<br>
-                    愿生活充满欢笑，岁月温柔以待。<br>
-                    祝大家：身体健康，万事如意，阖家幸福！
+                    挥动手掌，引爆满天星辰<br>
+                    捏合指尖，凝聚新年希望<br>
+                    愿您的 2026，如这烟火般绚烂夺目。
                 </p>
             </div>
         </main>
 
         <footer class="glass-card footer">
-            <p>点击屏幕燃放烟花 🎆</p>
-        </footer >
+            <p>✋ 张开手掌触发大爆炸 | 🤏 捏合手指积聚能量</p>
+        </footer>
     </div>
 
-    <script src="script.js"></script>
+    <!-- MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
+
 </html>
