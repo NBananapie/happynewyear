@@ -50,7 +50,7 @@ class Firework {
             // Spherical explosion
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
-            const speed = Math.random() * 2 + 1;
+            const speed = Math.random() * 2.5 + 1.5; // Slightly faster for grander feel
 
             velocities[i * 3] = speed * Math.sin(phi) * Math.cos(theta);
             velocities[i * 3 + 1] = speed * Math.sin(phi) * Math.sin(theta);
@@ -62,7 +62,7 @@ class Firework {
 
         const material = new THREE.PointsMaterial({
             color: color,
-            size: 0.6,
+            size: 0.7, // Slightly larger particles
             blending: THREE.AdditiveBlending,
             transparent: true,
             depthWrite: false
@@ -80,13 +80,13 @@ class Firework {
         for (let i = 0; i < PARTICLE_COUNT; i++) {
             positions[i * 3] += this.velocityData[i * 3] * delta * 15;
             positions[i * 3 + 1] += this.velocityData[i * 3 + 1] * delta * 15;
-            positions[i * 3 + 1] += GRAVITY.y * delta * 20; // Simplified gravity
+            positions[i * 3 + 1] += GRAVITY.y * delta * 20;
             positions[i * 3 + 2] += this.velocityData[i * 3 + 2] * delta * 15;
 
             // Drag
-            this.velocityData[i * 3] *= 0.98;
-            this.velocityData[i * 3 + 1] *= 0.98;
-            this.velocityData[i * 3 + 2] *= 0.98;
+            this.velocityData[i * 3] *= 0.97; // Less drag for longer streaks
+            this.velocityData[i * 3 + 1] *= 0.97;
+            this.velocityData[i * 3 + 2] *= 0.97;
         }
 
         this.points.geometry.attributes.position.needsUpdate = true;
@@ -103,7 +103,7 @@ class Firework {
 
 const activeFireworks = [];
 
-function launchFirework(x, y, z, color = 0xffd700) {
+function launchFirework(x, y, z, color = 0xd4af37) { // Default to Imperial Gold
     activeFireworks.push(new Firework(new THREE.Vector3(x, y, z), color));
 }
 
@@ -114,19 +114,17 @@ const canvasCtx = canvasElement.getContext('2d');
 const statusElement = document.getElementById('gesture-status');
 
 let lastPinchState = false;
-let pinchCooldown = 0;
 
 function onResults(results) {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        statusElement.innerText = "👐 手部追踪中...";
+        statusElement.innerText = "灵蛇入界 · 追踪中";
+        statusElement.style.color = "#d4af37";
         for (const landmarks of results.multiHandLandmarks) {
-            // Draw visual cues
             drawLandmarks(landmarks);
 
-            // Logic: Pinch Detection (Index Finger Tip [8] vs Thumb Tip [4])
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const distance = Math.sqrt(
@@ -134,24 +132,20 @@ function onResults(results) {
                 Math.pow(thumbTip.y - indexTip.y, 2)
             );
 
-            // Map camera coordinates to 3D world (normalized -1 to 1)
-            const worldX = (0.5 - indexTip.x) * 100; // Mirrored
+            const worldX = (0.5 - indexTip.x) * 100;
             const worldY = (0.5 - indexTip.y) * 60;
             const worldZ = 0;
 
-            // Effect 1: Pinch (Sparkles)
             if (distance < 0.05) {
-                launchFirework(worldX, worldY, worldZ, 0xff3300); // Red spark
-                statusElement.innerText = "🤏 蓄势待发...";
+                launchFirework(worldX, worldY, worldZ, 0xff3300); // Crimson spark
+                statusElement.innerText = "能量凝聚 · PINCHING";
                 lastPinchState = true;
             } else if (lastPinchState) {
-                // Release Pinch -> Big Gold Burst
-                launchFirework(worldX, worldY, worldZ, 0xffd700);
+                launchFirework(worldX, worldY, worldZ, 0xf9d423); // Bright Gold burst
                 lastPinchState = false;
-                statusElement.innerText = "🎆 绽放！";
+                statusElement.innerText = "如意绽放 · RELEASED";
             }
 
-            // Effect 2: Palm Open (Check if fingers are apart)
             const middleTip = landmarks[12];
             const palmDistance = Math.sqrt(
                 Math.pow(indexTip.x - middleTip.x, 2) +
@@ -159,11 +153,13 @@ function onResults(results) {
             );
 
             if (palmDistance > 0.1 && Math.random() < 0.1) {
+                statusElement.innerText = "鸿运当头 · PALM OPEN";
                 launchFirework((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 50, (Math.random() - 1) * 20, 0xffffff);
             }
         }
     } else {
-        statusElement.innerText = "🤚 请在镜头前举起手";
+        statusElement.innerText = "静候指教";
+        statusElement.style.color = "rgba(212, 175, 55, 0.5)";
     }
     canvasCtx.restore();
 }
