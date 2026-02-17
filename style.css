@@ -1,0 +1,135 @@
+:root {
+    --primary-red: #b31217;
+    --deep-red: #8b0000;
+    --gold: #f9d423;
+    --bright-gold: #ffcc33;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-color: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0b0b0b;
+    color: var(--text-color);
+    font-family: 'Noto Serif SC', serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#fireworks {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.container {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    padding: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px 0 rgba(179, 18, 23, 0.3);
+    border-color: var(--gold);
+}
+
+.title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 4rem;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(249, 212, 35, 0.5);
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg, var(--gold), var(--bright-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    letter-spacing: 2px;
+}
+
+.greeting-text {
+    line-height: 2;
+    font-size: 1.1rem;
+    color: #ffd7d7;
+}
+
+.footer {
+    padding: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.05); }
+    100% { opacity: 0.5; transform: scale(1); }
+}
+
+/* Add some festive elements */
+.container::before {
+    content: '🏮';
+    position: absolute;
+    top: -50px;
+    left: -20px;
+    font-size: 3rem;
+    animation: swing 3s ease-in-out infinite;
+}
+
+.container::after {
+    content: '🏮';
+    position: absolute;
+    top: -50px;
+    right: -20px;
+    font-size: 3rem;
+    animation: swing 3s ease-in-out infinite reverse;
+}
+
+@keyframes swing {
+    0% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+    100% { transform: rotate(-10deg); }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 3rem;
+    }
+    .subtitle {
+        font-size: 1rem;
+    }
+}
