@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 | 灵蛇送福 · 3D手势烟花</title>
+    <title>2026 | 星际奇旅 · 3D手势光启</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Premium Fonts -->
+    <!-- Modern Tech Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Orbitron:wght@500;700&display=swap"
         rel="stylesheet">
 
     <!-- Three.js & Libraries -->
@@ -24,49 +24,43 @@
 </head>
 
 <body>
-    <div id="noise-overlay"></div>
 
     <!-- 3D Canvas Container -->
     <div id="canvas-container"></div>
 
-    <!-- Decorative SVG Patterns -->
-    <div class="decorative-border top"></div>
-    <div class="decorative-border bottom"></div>
-
-    <!-- Gesture Recognition Overlay (Redesigned as 'Compass') -->
+    <!-- Gesture Recognition Overlay (Tech HUD Style) -->
     <div id="gesture-compass">
-        <div class="compass-ring"></div>
+        <div class="hud-ring"></div>
         <div class="video-container">
             <video id="webcam" autoplay playsinline></video>
             <canvas id="gesture-points"></canvas>
         </div>
-        <div id="gesture-status">等待召唤...</div>
+        <div id="gesture-status">SYS.INIT // 等待信号接入...</div>
     </div>
 
     <div class="container main-ui">
-        <header class="luxe-header">
-            <div class="ornament"></div>
-            <h2 class="year-label">MMXXVI</h2>
-            <h1 class="title">灵蛇送福</h1>
-            <div class="divider"><span>✦</span></div>
-            <p class="subtitle">GESTURE FIREWORKS EXPERIENCE</p>
+        <header class="tech-header">
+            <h2 class="year-label">EARTH ORBIT 2026</h2>
+            <h1 class="title">星际奇旅</h1>
+            <div class="divider"><span>/ /</span></div>
+            <p class="subtitle">PROJECT: NEON HORIZON</p>
         </header>
 
         <main class="content">
-            <div class="luxe-card">
+            <div class="tech-card">
                 <div class="card-inner">
                     <p class="greeting-text">
-                        万象更新 · 岁岁平安<br>
-                        <span class="highlight">挥动指尖，点亮属于您的星辰大海。</span>
+                        跨越维度 · 链接未来<br>
+                        <span class="highlight">张开手掌引燃星辰，捏合指尖汇聚能量。</span>
                     </p>
                 </div>
             </div>
         </main>
 
-        <footer class="luxe-footer">
+        <footer class="tech-footer">
             <div class="instructions">
-                <div class="item"><span>✋</span> 张手即燃</div>
-                <div class="item"><span>🤏</span> 指尖凝聚</div>
+                <div class="item"><span>[ OPEN ]</span> 张手即燃</div>
+                <div class="item"><span>[ PINCH ]</span> 指尖凝聚</div>
             </div>
         </footer>
     </div>
